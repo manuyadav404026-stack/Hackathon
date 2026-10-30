@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function admin() { return signedIn() && me().data.role == 'admin' && me().data.active == true; }
+    match /users/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.role == 'student' && request.resource.data.active == true;
+      allow read: if signedIn() && (uid == request.auth.uid || admin());
+      allow update: if admin();
+      allow update: if signedIn() && uid == request.auth.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.active == resource.data.active
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','department','studentId','updatedAt']);
+      allow delete: if false;
+    }
+    match /complaints/{id} {
+      allow create: if signedIn() && request.resource.data.studentUid == request.auth.uid && request.resource.data.status == 'Pending';
+      allow read: if signedIn() && (resource.data.studentUid == request.auth.uid || admin());
+      allow update: if admin();
+      allow update: if signedIn() && resource.data.studentUid == request.auth.uid
+        && resource.data.status in ['Resolved','Rejected']
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.reopened == true
+        && request.resource.data.title == resource.data.title
+        && request.resource.data.description == resource.data.description
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.location == resource.data.location
+        && request.resource.data.priority == resource.data.priority
+        && request.resource.data.assignedDepartment == resource.data.assignedDepartment
+        && request.resource.data.adminRemarks == resource.data.adminRemarks
+        && request.resource.data.rejectionReason == resource.data.rejectionReason
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reopened','resolutionTimestamp','updatedAt','activity']);
+      allow update: if signedIn() && resource.data.studentUid == request.auth.uid
+        && resource.data.status == 'Resolved'
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.reopened == resource.data.reopened
+        && request.resource.data.title == resource.data.title
+        && request.resource.data.description == resource.data.description
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.location == resource.data.location
+        && request.resource.data.priority == resource.data.priority
+        && request.resource.data.assignedDepartment == resource.data.assignedDepartment
+        && request.resource.data.adminRemarks == resource.data.adminRemarks
+        && request.resource.data.rejectionReason == resource.data.rejectionReason
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback','updatedAt']);
+      allow delete: if admin();
+    }
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create,delete: if admin();
+    }
+  }
+}
