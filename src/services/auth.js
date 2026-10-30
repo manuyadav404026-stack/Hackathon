@@ -1,0 +1,4 @@
+import {createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut,updatePassword,updateProfile} from 'firebase/auth';
+import {doc,setDoc,serverTimestamp} from 'firebase/firestore';import {auth,db} from '../firebase';
+export async function registerUser({name,email,password,department,studentId}){const c=await createUserWithEmailAndPassword(auth,email.trim(),password);await updateProfile(c.user,{displayName:name.trim()});await setDoc(doc(db,'users',c.user.uid),{uid:c.user.uid,name:name.trim(),email:c.user.email,department:department.trim(),studentId:studentId.trim(),role:'student',active:true,createdAt:serverTimestamp()});return c.user}
+export const login=(email,password)=>signInWithEmailAndPassword(auth,email.trim(),password);export const logout=()=>signOut(auth);export const resetPassword=email=>sendPasswordResetEmail(auth,email.trim());export const changePassword=p=>updatePassword(auth.currentUser,p);

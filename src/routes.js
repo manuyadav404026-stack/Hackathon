@@ -1,0 +1,1 @@
+export {Home,Unauthorized,NotFound} from './pages/Public';export {Login,Register} from './pages/Auth';export {Dashboard,Submit,Complaints,ComplaintDetails,Notifications,Profile,Settings} from './pages/Student';export {AdminDashboard,AllComplaints,AdminComplaint,Users,Analytics,AdminProfile,AdminSettings} from './pages/Admin';
